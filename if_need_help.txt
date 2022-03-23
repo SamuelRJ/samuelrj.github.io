@@ -1,5 +1,0 @@
-To install package
-npm install <package name>
-
-To use package
-Use same way as three or check website of package
