@@ -1,24 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <script src="./index.ts" defer=""></script>
-  </head>
-  <body>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Breakdown!</title>
     <style>
-      h1 {
-        text-align: center;
-      }
-      p {
-        text-align: center;
-      }
-      div {
-        text-align: center;
+      html,
+      body {
+        margin: 0;
+        overscroll-behavior: none;
       }
     </style>
-    <h1>Website under construction</h1>
-    <img src="Jack_Hammer.png" alt="Girl in a jacket" class="center" />
-    <p>Bear with me</p>
-    <img src="bear.jpg" alt="raWr" class="left" />
-    <p></p>
+  </head>
+  <body>
+    <div style="text-align:center"> 
+      <canvas
+      id="canvas"
+      width="500"
+      height="500"
+      style="background-color:black;"
+    ></canvas>
+    <script type="module" src="./index.js"></script>
   </body>
 </html>
