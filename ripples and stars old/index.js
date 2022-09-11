@@ -1,24 +1,17 @@
 const ctx = document.getElementById("canvas").getContext("2d");
 
-// const width = window.innerWidth;
-// const height = window.innerHeight;
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const width = canvas.width;
-const height = canvas.height;
+const width = 800;
+const height = 500;
 const field = [];
 const range = 1;
 const imageData = ctx.createImageData(width, height);
 
 let clock = 0;
-let simSpeed = 1;
+let simSpeed = 2;
 let dampening = 0.9999;
 let smoothImage = false;
 let mouseX = width / 2;
 let mouseY = height / 2;
-let fullScreen = false;
-let mouseMoved = -1;
-let cursorBrightness = 0;
 
 for (let i = 0; i < width; i++) {
   field[i] = [];
@@ -207,51 +200,22 @@ const putImage = () => {
   ctx.putImageData(imageData, 0, 0);
 };
 
-const handleMouse = () => {
-  if (mouseMoved > 0) {
-    // document.getElementById("canvas_div_no_cursor").style.cursor = "none";
-    mouseMoved -= 1;
-    if (mouseMoved > 80) {
-      cursorBrightness += 0.2;
-      cursorBrightness = Math.min(1, cursorBrightness);
-    } else {
-      cursorBrightness = mouseMoved / 80;
-    }
-    const gradient = ctx.createRadialGradient(
-      mouseX + 399,
-      mouseY,
-      1,
-      mouseX + 399,
-      mouseY,
-      20
-    );
-    gradient.addColorStop(0, `rgba(255,255,250,${0.2 * cursorBrightness})`);
-    gradient.addColorStop(0.3, `rgba(255,255,250,0)`);
-    gradient.addColorStop(0.5, `rgba(0,0,0,${0.2 * cursorBrightness})`);
-    gradient.addColorStop(1, `rgba(0,0,0,0)`);
-    // for (let i = 0; i < resolution; i++) {
-    //   gradient.addColorStop(
-    //     i / resolution / 2,
-    //     `rgba(255,255,100,${(resolution - i) / resolution ** 1.5})`
-    //   );
-    // }
-    ctx.beginPath();
-    ctx.arc(mouseX + 399, mouseY, 10, 0, 2 * Math.PI, false);
-    ctx.fillStyle = gradient;
-    ctx.fill();
-  }
-};
-
 const nextTick = () => {
   for (let i = 0; i < simSpeed; i++) {
     updateFieldForces(field);
+
     addPreset(0);
+
+    // pass 1: update values
     updateVelandPos(field);
     clock++;
   }
+  // pass 2: update pixels
   updatePixels(field);
+
+  // console.log(`imageData`, imageData);
+  // Draw image data to the canvas
   putImage();
-  handleMouse();
 
   requestAnimationFrame(nextTick);
 };
@@ -260,39 +224,25 @@ nextTick();
 document.addEventListener("mousemove", (event) => {
   mouseX = event.pageX - 400;
   mouseY = event.pageY;
-  mouseMoved = 100;
+  // adjX = mouseX * mouseX * 30 + 2;
+  // adjY = mouseY * mouseY * 5 + 1;
+  // console.log(`AdjX:${Math.round(adjX, 2)} AdjY:${Math.round(adjY, 2)}`);
+});
+document.addEventListener("click", (event) => {
+  // console.log("clicked")
+  field[mouseX - 9][mouseY - 6].pos = 255;
+  smoothImage = !smoothImage;
+  openFullscreen();
 });
 
-function fullscreen() {
-  var el = document.getElementById("canvas");
-  fullScreen = !fullScreen;
-  if (fullScreen) {
-    if (el.webkitRequestFullScreen) {
-      el.webkitRequestFullScreen();
-    } else {
-      el.mozRequestFullScreen();
-    }
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // width = canvas.width;
-    // height = canvas.height;
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      /* Safari */
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
-      /* IE11 */
-      document.msExitFullscreen();
-    }
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    width = canvas.width;
-    height = canvas.height;
+function openFullscreen() {
+  if (ctx.requestFullscreen) {
+    ctx.requestFullscreen();
+  } else if (ctx.webkitRequestFullscreen) {
+    /* Safari */
+    ctx.webkitRequestFullscreen();
+  } else if (ctx.msRequestFullscreen) {
+    /* IE11 */
+    ctx.msRequestFullscreen();
   }
 }
-
-canvas.addEventListener("click", fullscreen);
