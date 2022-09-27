@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Breakdown!</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overscroll-behavior: none;
+      }
+      .particleContainer {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 800px;
+        height: 800px;
+        z-index: 100;
+        opacity: 0.5;
+        overflow: hidden;
+      }
+      .particle {
+        position: absolute;
+        width: 2264px;
+        height: 2264px;
+        margin-top: -1132px;
+        margin-left: -1132px;
+        border-radius: 50%;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <div id="particleContainer" class="particleContainer"></div>
+  </head>
+  <body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
