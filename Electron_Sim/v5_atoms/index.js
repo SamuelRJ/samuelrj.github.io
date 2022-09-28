@@ -8,24 +8,55 @@
   every particle is a canvas. Move it around
 */
 
-import { createParticle, updateParticles, protonMass } from "./pFuncs.js";
+import {
+  createParticle,
+  updateParticles,
+  protonMass,
+  getParticles,
+} from "./pFuncs.js";
 import { updateFields } from "./fFuncs.js";
-import { updateScreen, isPaused } from "./uiAndControl.js";
+import { updateScreen, isPaused, drawBlackBackground } from "./uiAndControl.js";
 import { get } from "./miscFuncs.js";
+import { heyJean } from "./jean.js";
 
 const width = get("width");
 const height = get("height");
-let level = 3;
+let level = 2;
 
 //TODO:
 // - Make orbitals for atoms. Shiftable based on surrounding fields.
 // - Make electron energy go somewhere when combining
 // - Allow high-energy electrons to knock out other electrons. Or excite it. Ionization energy vs excitation energy
+// - Add mini version that Jean can walk to. And interact with. Make multiple.
 export const getLvl = () => {
-  if (level == 0) {
-    return 3;
-  }
   return level;
+};
+
+export const changeLvlTo = (newLvl) => {
+  if (newLvl == level) {
+    return;
+  }
+  if (level == 3) {
+    let p = getParticles();
+    for (let theP in p) {
+      p[theP].elem.style.display = "none";
+    }
+  }
+  if (level == 2) {
+    drawBlackBackground();
+  }
+  if (newLvl == 3) {
+    let p = getParticles();
+    for (let theP in p) {
+      if (p[theP].active) {
+        p[theP].elem.style.display = "";
+      }
+    }
+  }
+  if (newLvl == 2) {
+    //write code to set up level 2
+  }
+  level = newLvl;
 };
 // Create starting electrons
 for (let i = 0; i < 1; i++) {
@@ -57,6 +88,7 @@ const nextTick = () => {
     let f = updateFields(p);
     updateScreen(f, p);
   }
+  heyJean();
   requestAnimationFrame(nextTick);
 };
 nextTick();

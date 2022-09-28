@@ -1,8 +1,8 @@
 // Misc functions
 
-let scaledUp = 5; //pixels per pixel
-let width = canvas.width / scaledUp;
-let height = canvas.height / scaledUp;
+let scaledUp = 2; //pixels per pixel
+let width = 800 / scaledUp;
+let height = 800 / scaledUp;
 
 export const get = (getWhat) => {
   if (getWhat == "width") {
@@ -39,12 +39,13 @@ export const calculateGradientForParticle = _.memoize((charge, mass) => {
   // const rVal = clamp8Bit(-charge * 255);
   // const gVal = clamp8Bit(charge * 255);
   const bVal = clamp8Bit(massCalc);
+  const sizeHelper = Math.max(mass ** 0.5 / 100, 0.1);
   return `radial-gradient(
     circle,
     rgba(${rVal}, ${gVal}, ${bVal}, 1) 0%,
-    rgba(${rVal}, ${gVal}, ${bVal}, 1) 0.10%,
-    rgba(${rVal}, ${gVal}, 0, 0.1) 0.3%,
-    rgba(${rVal}, ${gVal}, 0, 0.05) 40%,
+    rgba(${rVal}, ${gVal}, ${bVal}, 1) ${sizeHelper}%,
+    rgba(${rVal}, ${gVal}, 0, ${sizeHelper}) 0.3%,
+    rgba(${rVal}, ${gVal}, 0, ${sizeHelper / 2}) 40%,
     rgba(${rVal}, ${gVal}, 0, 0.0) 100%
   )`;
 });

@@ -1,5 +1,6 @@
 // Particle functions
 
+import { getLvl } from "./index.js";
 import { calcDist, get, calculateGradientForParticle } from "./miscFuncs.js";
 
 let p = []; //Particle
@@ -9,6 +10,7 @@ const screenWidth = get("screenWidth");
 const screenHeight = get("screenHeight");
 const scale = get("scale");
 const particleContainerElem = document.getElementById("particleContainer");
+let damping = 0.99;
 
 export const createParticle = (x, y, velX, velY, charge, mass) => {
   const elem = document.createElement("div");
@@ -27,11 +29,19 @@ export const createParticle = (x, y, velX, velY, charge, mass) => {
     active: true,
     elem,
   };
+  if (getLvl() != 3) {
+    newP.elem.style.display = "none";
+  }
   p.push(newP);
   return newP;
 };
+
 const getNewID = () => {
   return String(Math.round(Math.random() * 1000000));
+};
+
+export const getParticles = () => {
+  return p;
 };
 
 export const pushNewP = (p) => {
@@ -44,14 +54,17 @@ export const updateParticles = () => {
       continue;
     }
     for (let thatP in p) {
-      if (!p[thatP].active) {
+      if (!p[thatP].active || !p[thisP].active) {
         continue;
       }
       if (p[thisP].id >= p[thatP].id) {
         continue;
       }
       let dist = calcDist(p[thisP].x, p[thisP].y, p[thatP].x, p[thatP].y);
-      if (dist > 2) {
+      let radius = Math.sqrt(
+        Math.abs(p[thisP].charge) + Math.abs(p[thatP].charge)
+      );
+      if (dist > radius) {
         updateVelocity(thisP, thatP, dist);
       } else {
         if (isElectron(thisP) && isElectron(thatP)) {
@@ -81,8 +94,31 @@ export const protonMass = () => {
   return 100;
 };
 
+export const getDamping = () => {
+  return damping || 0.99;
+};
+export const updateDamping = (jean) => {
+  let newDamping = 1.05;
+  let dampingArea = {
+    l: -30,
+    r: 90,
+    t: 10,
+    b: 230,
+  };
+  //216 to 20
+  if (jean.x > 5 && jean.x < 90) {
+    newDamping = Math.min(
+      1,
+      Math.max(
+        0,
+        (1.15 * (dampingArea.b - jean.y - dampingArea.t)) / dampingArea.b
+      )
+    );
+    damping = Math.round(100 * newDamping) / 100;
+  }
+};
+
 const addDamping = (theP) => {
-  let damping = 0.99; //Take this out for real stuff.
   p[theP].velX *= damping;
   p[theP].velY *= damping;
 };
@@ -114,12 +150,11 @@ const combineParticles = (thisP, thatP) => {
     (p[thisP].mass + p[thatP].mass);
   let charge = p[thisP].charge + p[thatP].charge;
   let mass = p[thisP].mass + p[thatP].mass;
-  let brandNewP = createParticle(x, y, velX, velY, charge, mass); //make drawing better. Electron is now orbiting electron
+  createParticle(x, y, velX, velY, charge, mass); //make drawing better. Electron is now orbiting electron
   p[thisP].active = false;
   p[thatP].active = false;
   p[thisP].elem.style.display = "none";
   p[thatP].elem.style.display = "none";
-  p.push(brandNewP);
 };
 
 const updateVelocity = (thisP, thatP, dist) => {
@@ -135,6 +170,15 @@ const updateVelocity = (thisP, thatP, dist) => {
   p[thisP].velY += yForce / p[thisP].mass;
   p[thatP].velX -= xForce / p[thatP].mass;
   p[thatP].velY -= yForce / p[thatP].mass;
+};
+
+export const logParticles = () => {
+  for (let anothaP in p) {
+    console.log("");
+    if (p[anothaP].active) {
+      console.log(p[anothaP]);
+    }
+  }
 };
 
 const wallCheck = (theP) => {

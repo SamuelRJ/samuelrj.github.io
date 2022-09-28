@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Breakdown!</title>
+    <title>Welcome!</title>
     <style>
       html,
       body {
@@ -18,7 +18,7 @@
         width: 800px;
         height: 800px;
         z-index: 100;
-        opacity: 0.5;
+        opacity: 1;
         overflow: hidden;
       }
       .particle {
@@ -34,7 +34,38 @@
     <div id="particleContainer" class="particleContainer"></div>
   </head>
   <body>
-    <canvas id="canvas" width="800" height="800"></canvas>
+    <canvas
+      id="canvas"
+      width="1000"
+      height="1000"
+      style="border: 1px solid #c3c3c3"
+    ></canvas>
+    <canvas
+      id="jean"
+      width="1000"
+      height="1000"
+      style="border: 10px solid #a3a3a3"
+    ></canvas>
+    <script type="text/javascript">
+      var Jean;
+      const updateJean = (jean) => {
+        Jean = jean;
+      };
+      var jean = document.getElementById("jean");
+      var render = jean.getContext("2d");
+      jean.width = 300;
+      jean.height = 800;
+      jean.style.left = `830px`;
+      jean.style.top = `0px`;
+      jean.style.position = "absolute";
+      var canvas = document.getElementById("canvas");
+      var render = canvas.getContext("2d");
+      canvas.width = 800;
+      canvas.height = 800;
+      canvas.style.left = "-2.5px";
+      canvas.style.top = "-2.5px";
+      canvas.style.position = "absolute";
+    </script>
     <script type="module" src="./index.js"></script>
   </body>
 </html>

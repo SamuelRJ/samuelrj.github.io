@@ -42,18 +42,21 @@ const updateFieldsLvl2 = (p) => {
   let range = Math.max(width, height);
   for (let theP in p) {
     if (p[theP].active) {
+      let thisRange = range; //100 * (p[theP].mass + Math.abs(p[theP].charge));
       let pX = Math.floor(p[theP].x);
       let pY = Math.floor(p[theP].y);
-      let xMin = Math.max(0, pX - range);
-      let xMax = Math.min(width - 1, pX + range);
-      let yMin = Math.max(0, pY - range);
-      let yMax = Math.min(height - 1, pY + range);
+      let xMin = Math.max(0, pX - thisRange);
+      let xMax = Math.min(width - 1, pX + thisRange);
+      let yMin = Math.max(0, pY - thisRange);
+      let yMax = Math.min(height - 1, pY + thisRange);
       for (let x = xMin; x < xMax; x++) {
         for (let y = yMin; y < yMax; y++) {
           let dist = calcDist(p[theP].x, p[theP].y, x, y);
-          field[x][y].val += (100 * p[theP].charge) / dist ** 0.5;
-          if (dist < 10) {
-            field[x][y].mass += p[theP].mass / Math.pow(dist * 2, 5);
+
+          // field[x][y].val += (100 * p[theP].charge) / dist ** 0.5;
+          field[x][y].val += (100 * p[theP].charge) / dist;
+          if (dist < range) {
+            field[x][y].mass += Math.sqrt(p[theP].mass) / dist;
           }
         }
       }

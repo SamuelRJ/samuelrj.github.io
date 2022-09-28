@@ -1,8 +1,9 @@
 // User interface and controls
 
 import { clamp8Bit, get, calcDist } from "./miscFuncs.js";
-import { createParticle, protonMass } from "./pFuncs.js";
-import { getLvl } from "./index.js";
+import { createParticle, protonMass, logParticles } from "./pFuncs.js";
+import { getLvl, changeLvlTo } from "./index.js";
+import { heyJean } from "./jean.js";
 
 let scaleUp = get("scale"); //how many pixels per pixel
 
@@ -14,9 +15,8 @@ const height = get("height");
 const screenWidth = width * scaleUp;
 const screenHeight = height * scaleUp;
 const imageData = ctx.createImageData(screenWidth, screenHeight);
-const imageDataLvl3 = [];
 let pauseTimer = 0;
-let autoPauseTimeout = 500;
+let autoPauseTimeout = 2000;
 let textFadeTimer = 0;
 let sizePtoCreate = 1;
 
@@ -51,7 +51,7 @@ const updateScreenLvl2 = (field) => {
 
       const rVal = clamp8Bit(-field[x][y].val);
       const gVal = clamp8Bit(field[x][y].val);
-      const bVal = clamp8Bit(50 * field[x][y].mass ** 0.2);
+      const bVal = clamp8Bit(Math.pow(field[x][y].mass, 2));
 
       imageData.data[pixelStartIndex] = rVal; // red value
       imageData.data[pixelStartIndex + 1] = gVal; // green value
@@ -70,19 +70,19 @@ const updateTextOnScreen = () => {
         0,
         (500 - textFadeTimer) / 100
       )}`;
-      ctx.font = "13px serif";
+      ctx.font = "24px serif";
       ctx.fillText(
         "Press 'e' or 'p' to \"click-to-create\" electrons or protons",
         5,
-        15
+        25
       );
     } else {
       ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(
         0,
         (200 - textFadeTimer) / 100
       )}`;
-      ctx.font = "10px serif";
-      ctx.fillText(`Click creates: ${sizePtoCreate}x ${clickCreates}`, 5, 15);
+      ctx.font = "20px serif";
+      ctx.fillText(`Click creates: ${sizePtoCreate}x ${clickCreates}`, 5, 25);
     }
   }
 };
@@ -102,15 +102,15 @@ const createScreen = () => {
 
 const drawPause = () => {
   ctx.beginPath();
-  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
   ctx.fillRect(screenWidth / 2 - 15, screenHeight / 2 - 30, 10, 60);
   ctx.fillRect(screenWidth / 2 + 15, screenHeight / 2 - 30, 10, 60);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
   ctx.stroke();
 };
 
-const drawBlackBackground = () => {
+export const drawBlackBackground = () => {
   ctx.beginPath();
   ctx.fillStyle = "rgba(0, 0, 0, 1)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
@@ -168,7 +168,9 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   neverTyped = false;
   textFadeTimer = 0;
+
   if (event.code == "Space") {
+    // logParticles();
     if (pauseTimer >= autoPauseTimeout) {
       unpause();
     } else {
@@ -183,6 +185,33 @@ document.addEventListener("keydown", (event) => {
     clickCreates = "wire";
   } else if (event.code.includes("Digit")) {
     clickSizeAdding(event);
+  } else if (
+    event.key == "i" ||
+    event.key == "j" ||
+    event.key == "k" ||
+    event.key == "l"
+  ) {
+    heyJean("move", event.key, true);
+  } else if (event.key == ",") {
+    console.log("changing to level 1");
+    changeLvlTo(1);
+  } else if (event.key == ".") {
+    console.log("changing to level 2");
+    changeLvlTo(2);
+  } else if (event.key == "/") {
+    console.log("changing to level 3");
+    changeLvlTo(3);
+  }
+});
+
+document.addEventListener("keyup", (event) => {
+  if (
+    event.key == "i" ||
+    event.key == "j" ||
+    event.key == "k" ||
+    event.key == "l"
+  ) {
+    heyJean("move", event.key, false);
   }
 });
 
@@ -192,16 +221,21 @@ const clickSizeAdding = (event) => {
     sizePtoCreate = 1;
   } else {
     //addVal = Math.pow(10, addVal - 1);
-    if (event.shiftKey) {
+    if (!event.shiftKey) {
       sizePtoCreate = addVal;
-      if (sizePtoCreate == 0) {
-        sizePtoCreate = 1;
+      if (addVal == 6) {
+        sizePtoCreate = 10;
+      } else if (addVal == 7) {
+        sizePtoCreate = 20;
+      } else if (addVal == 8) {
+        sizePtoCreate = 50;
+      } else if (addVal == 9) {
+        sizePtoCreate = 100;
       }
     } else {
-      sizePtoCreate = addVal;
     }
+    console.log(sizePtoCreate);
   }
-  console.log(sizePtoCreate);
 };
 
 createScreen();
