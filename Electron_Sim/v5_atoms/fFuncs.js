@@ -67,9 +67,14 @@ const updateFieldsLvl2 = (p) => {
   // let rangeFactor = Math.round(Math.max(10, 100 - numParticles ** 0.5));
   for (let theP in p) {
     if (p[theP].active) {
-      let thisRange = Math.min(
-        800,
-        rangeFactor * (p[theP].mass + Math.abs(p[theP].charge))
+      let thisRange = Math.floor(
+        Math.max(
+          20,
+          Math.min(
+            400,
+            rangeFactor * (p[theP].mass + Math.abs(p[theP].charge) ** 0.5)
+          )
+        )
       );
       let pX = Math.floor(p[theP].x);
       let pY = Math.floor(p[theP].y);
