@@ -1,7 +1,12 @@
 // User interface and controls
 
 import { clamp8Bit, get, calcDist } from "./miscFuncs.js";
-import { createParticle, protonMass, logParticles } from "./pFuncs.js";
+import {
+  createParticle,
+  protonMass,
+  logParticles,
+  getParticles,
+} from "./pFuncs.js";
 import { getLvl, changeLvlTo } from "./index.js";
 import { heyJean } from "./jean.js";
 
@@ -19,8 +24,11 @@ let pauseTimer = 0;
 let autoPauseTimeout = 2000;
 let textFadeTimer = 0;
 let sizePtoCreate = 1;
+let mouseX = 0;
+let mouseY = 0;
 
 let clickCreates = "nothing"; //nothing, electron, proton, wire
+let rapidFire = false;
 
 export const isPaused = () => {
   pauseTimer++;
@@ -33,6 +41,7 @@ export const isPaused = () => {
 };
 
 export const updateScreen = (field, p) => {
+  checkRapidFire();
   let level = getLvl();
   if (level == 3) {
     // updateScreenLvl3(p);
@@ -49,17 +58,28 @@ const updateScreenLvl2 = (field) => {
       let x = Math.floor(i / scaleUp);
       let y = Math.floor(j / scaleUp);
 
-      const rVal = clamp8Bit(-field[x][y].val);
-      const gVal = clamp8Bit(field[x][y].val);
-      const bVal = clamp8Bit(Math.pow(field[x][y].mass, 2));
+      let rVal = clamp8Bit(-field[x][y].val);
+      let gVal = clamp8Bit(field[x][y].val);
+      let bVal = clamp8Bit(Math.pow(field[x][y].mass, 2));
+
+      rVal += 20 * (field[x][y].dk - 1);
+      gVal += 20 * (field[x][y].dk - 1);
+      // const aVal = clamp8Bit(Math.abs(field[x][y].val + field[x][y].mass) / 2);
 
       imageData.data[pixelStartIndex] = rVal; // red value
       imageData.data[pixelStartIndex + 1] = gVal; // green value
       imageData.data[pixelStartIndex + 2] = bVal; // blue value
+      // imageData.data[pixelStartIndex + 3] = aVal; // alpha value
     }
   }
   ctx.putImageData(imageData, 0, 0);
   updateTextOnScreen();
+};
+
+const checkRapidFire = () => {
+  if (rapidFire) {
+    clickCreateParticle();
+  }
 };
 
 let neverTyped = true;
@@ -122,7 +142,35 @@ const unpause = () => {
   pauseTimer = 0;
 };
 
+const clickCreateParticle = () => {
+  if (clickCreates == "electron") {
+    for (let i = 0; i < sizePtoCreate; i++) {
+      createParticle(
+        mouseX + Math.random() * 10 - 5,
+        mouseY + Math.random() * 10 - 5,
+        0,
+        0,
+        -1,
+        1
+      );
+    }
+  } else if (clickCreates == "proton") {
+    let charge = sizePtoCreate;
+    let mass = protonMass() * sizePtoCreate;
+    createParticle(
+      mouseX + Math.random() * 10 - 5,
+      mouseY + Math.random() * 10 - 5,
+      0,
+      0,
+      charge,
+      mass
+    );
+  }
+};
+
 document.addEventListener("mousemove", (event) => {
+  mouseX = event.pageX / scaleUp;
+  mouseY = event.pageY / scaleUp;
   if (!isPaused()) {
     unpause();
   }
@@ -131,37 +179,28 @@ document.addEventListener("mousemove", (event) => {
 document.addEventListener("click", (event) => {
   unpause();
   if (clickCreates == "nothing") {
+    let p = getParticles();
+    let minDist = 10000;
+    let minDistID = 0;
+    for (let theP in p) {
+      if (p[theP].active) {
+        let distance = calcDist(p[theP].x, p[theP].y, mouseX, mouseY);
+        if (distance <= minDist) {
+          minDist = distance;
+          minDistID = theP;
+        }
+      }
+    }
+    console.log(`charge: ${p[minDistID].charge}, mass: ${p[minDistID].mass}`);
     return;
   }
   if (clickCreates == "wire") {
     return;
   }
   if (pauseTimer < autoPauseTimeout) {
-    let mouseX = event.pageX / scaleUp;
-    let mouseY = event.pageY / scaleUp;
-    if (clickCreates == "electron") {
-      for (let i = 0; i < sizePtoCreate; i++) {
-        createParticle(
-          mouseX + Math.random() * 10 - 5,
-          mouseY + Math.random() * 10 - 5,
-          0,
-          0,
-          -1,
-          1
-        );
-      }
-    } else if (clickCreates == "proton") {
-      let charge = sizePtoCreate;
-      let mass = protonMass() * sizePtoCreate;
-      createParticle(
-        mouseX + Math.random() * 10 - 5,
-        mouseY + Math.random() * 10 - 5,
-        0,
-        0,
-        charge,
-        mass
-      );
-    }
+    mouseX = event.pageX / scaleUp;
+    mouseY = event.pageY / scaleUp;
+    clickCreateParticle();
   }
 });
 
@@ -183,6 +222,8 @@ document.addEventListener("keydown", (event) => {
     clickCreates = "proton";
   } else if (event.key == "w") {
     clickCreates = "wire";
+  } else if (event.key == "z") {
+    clickCreates = "nothing";
   } else if (event.code.includes("Digit")) {
     clickSizeAdding(event);
   } else if (
@@ -193,14 +234,13 @@ document.addEventListener("keydown", (event) => {
   ) {
     heyJean("move", event.key, true);
   } else if (event.key == ",") {
-    console.log("changing to level 1");
     changeLvlTo(1);
   } else if (event.key == ".") {
-    console.log("changing to level 2");
     changeLvlTo(2);
   } else if (event.key == "/") {
-    console.log("changing to level 3");
     changeLvlTo(3);
+  } else if (event.key == "r") {
+    rapidFire = true;
   }
 });
 
@@ -212,6 +252,8 @@ document.addEventListener("keyup", (event) => {
     event.key == "l"
   ) {
     heyJean("move", event.key, false);
+  } else if (event.key == "r") {
+    rapidFire = false;
   }
 });
 
@@ -234,7 +276,6 @@ const clickSizeAdding = (event) => {
       }
     } else {
     }
-    console.log(sizePtoCreate);
   }
 };
 

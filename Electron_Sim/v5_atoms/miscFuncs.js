@@ -32,20 +32,26 @@ export const calcDistish = (x1, y1, x2, y2) => {
   return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 };
 
-export const calculateGradientForParticle = _.memoize((charge, mass) => {
-  const massCalc = Math.min(255, mass / (charge + 0.001));
-  const rVal = -charge * 255;
-  const gVal = charge * 255;
-  // const rVal = clamp8Bit(-charge * 255);
-  // const gVal = clamp8Bit(charge * 255);
+export const calculateGradientForParticle = (charge, mass) => {
+  const massCalc = Math.min(255, mass / (5 * Math.abs(charge) + 0.001));
+  // const massCalc = Math.min(255, 255 - 255 * Math.abs(charge));
+  const rVal = clamp8Bit((-charge * 255) / mass ** 0.1);
+  const gVal = clamp8Bit((charge * 255) / mass ** 0.1);
   const bVal = clamp8Bit(massCalc);
-  const sizeHelper = Math.max(mass ** 0.5 / 100, 0.1);
+  const sizeHelper = Math.max((2 * mass ** 0.4) / 5 - 2, 0.5);
   return `radial-gradient(
     circle,
     rgba(${rVal}, ${gVal}, ${bVal}, 1) 0%,
-    rgba(${rVal}, ${gVal}, ${bVal}, 1) ${sizeHelper}%,
-    rgba(${rVal}, ${gVal}, 0, ${sizeHelper}) 0.3%,
-    rgba(${rVal}, ${gVal}, 0, ${sizeHelper / 2}) 40%,
-    rgba(${rVal}, ${gVal}, 0, 0.0) 100%
+    rgba(${rVal}, ${gVal}, ${bVal}, 1) ${Math.min(100, sizeHelper)}%,
+    rgba(0, 0, 0, 0) ${Math.min(100, sizeHelper * 2)}%,
+    rgba(0, 0, 0, 0) 100%
   )`;
-});
+  // return `radial-gradient(
+  //   circle,
+  //   rgba(${rVal}, ${gVal}, ${bVal}, 1) 0%,
+  //   rgba(${rVal}, ${gVal}, ${bVal}, 1) ${sizeHelper}%,
+  //   rgba(${rVal}, ${gVal}, 0, ${sizeHelper}) 0.3%,
+  //   rgba(${rVal}, ${gVal}, 0, ${sizeHelper / 2}) 40%,
+  //   rgba(${rVal}, ${gVal}, 0, 0.0) 100%
+  // )`;
+};

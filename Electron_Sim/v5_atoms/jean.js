@@ -111,13 +111,12 @@ export const updateJeanMetrics = (jean) => {
   Jean.beginPath();
   Jean.fillStyle = `rgba(${40}, ${90}, ${180}, 0.2)`;
   let filledHeight = (getDamping() * 200) / 52;
-  console.log(filledHeight);
   let filledOffsetFromTop = 52;
   let filledOffsetTop = 200 - 52 - filledHeight;
   let filledOffsetTotal = filledOffsetFromTop + filledOffsetTop;
   Jean.fillRect(20, filledOffsetTotal, 52, filledHeight);
   Jean.stroke();
   Jean.fillStyle = `rgba(0, 255, 255, 11)`;
-  Jean.font = "34px serif";
-  Jean.fillText(`${getDamping()}`, 25, 52);
+  Jean.font = "24px serif";
+  Jean.fillText(`${getDamping()}`, 25, 42);
 };

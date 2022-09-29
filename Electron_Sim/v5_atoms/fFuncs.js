@@ -2,6 +2,7 @@
 
 import { get } from "./miscFuncs.js";
 import { calcDist } from "./miscFuncs.js";
+import { getParticles } from "./pFuncs.js";
 import { getLvl } from "./index.js";
 
 let scaleUp = get("scale"); //how many pixels per pixel
@@ -21,9 +22,30 @@ for (let i = 0; i < width; i++) {
       vel: 0,
       acc: 0,
       mass: 0,
+      dk: 1,
     };
   }
 }
+
+// Create wall
+for (let i = 0; i < 400; i++) {
+  field[i] = [];
+  for (let j = 0; j < 400; j++) {
+    field[i][j] = {
+      x: i,
+      y: j,
+      val: 0,
+      vel: 0,
+      acc: 0,
+      mass: 0,
+      dk: 1,
+    };
+  }
+}
+
+export const getField = () => {
+  return field;
+};
 
 export const updateFields = (p) => {
   let level = getLvl();
@@ -34,15 +56,21 @@ export const updateFields = (p) => {
 
 const updateFieldsLvl2 = (p) => {
   for (let x = 0; x < width; x++) {
-    for (let y = 0; y < width; y++) {
+    for (let y = 0; y < height; y++) {
       field[x][y].val = 0;
       field[x][y].mass = 0;
     }
   }
   let range = Math.max(width, height);
+  let numParticles = getParticles().length;
+  let rangeFactor = Math.round(Math.max(3, 1 - numParticles ** 0.5));
+  // let rangeFactor = Math.round(Math.max(10, 100 - numParticles ** 0.5));
   for (let theP in p) {
     if (p[theP].active) {
-      let thisRange = range; //100 * (p[theP].mass + Math.abs(p[theP].charge));
+      let thisRange = Math.min(
+        800,
+        rangeFactor * (p[theP].mass + Math.abs(p[theP].charge))
+      );
       let pX = Math.floor(p[theP].x);
       let pY = Math.floor(p[theP].y);
       let xMin = Math.max(0, pX - thisRange);
@@ -54,8 +82,11 @@ const updateFieldsLvl2 = (p) => {
           let dist = calcDist(p[theP].x, p[theP].y, x, y);
 
           // field[x][y].val += (100 * p[theP].charge) / dist ** 0.5;
-          field[x][y].val += (100 * p[theP].charge) / dist;
-          if (dist < range) {
+          if (dist < thisRange) {
+            field[x][y].val +=
+              ((100 * p[theP].charge) / dist) *
+              ((thisRange - dist) / thisRange);
+            // field[x][y].val *= Math.min(1, (thisRange - dist) / thisRange);
             field[x][y].mass += Math.sqrt(p[theP].mass) / dist;
           }
         }
