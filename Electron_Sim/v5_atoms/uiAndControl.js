@@ -11,6 +11,7 @@ import { getLvl, changeLvlTo } from "./index.js";
 import { heyJean } from "./jean.js";
 
 let scaleUp = get("scale"); //how many pixels per pixel
+let infoP = -1;
 
 const particleContainerElem = document.getElementById("particleContainer");
 
@@ -49,6 +50,7 @@ export const updateScreen = (field, p) => {
   if (level == 2) {
     updateScreenLvl2(field);
   }
+  showParticleInfo();
 };
 
 const updateScreenLvl2 = (field) => {
@@ -104,6 +106,9 @@ const updateTextOnScreen = () => {
       ctx.font = "20px serif";
       ctx.fillText(`Click creates: ${sizePtoCreate}x ${clickCreates}`, 5, 25);
     }
+  }
+  if (infoP != -1) {
+    showParticleInfo();
   }
 };
 
@@ -168,6 +173,44 @@ const clickCreateParticle = () => {
   }
 };
 
+export const getInfoP = () => {
+  return infoP;
+};
+export const setInfoP = (newInfoP) => {
+  infoP = newInfoP;
+};
+
+const showParticleInfo = () => {
+  let p = getParticles();
+  if (infoP == -1) {
+    return;
+  }
+  if (p[infoP].active) {
+    ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+    ctx.font = "20px serif";
+    ctx.fillText(`Particle info`, 10, 750);
+    ctx.fillText(`         Charge: ${p[infoP].charge}`, 10, 770);
+    ctx.fillText(`            Mass: ${p[infoP].mass}`, 10, 790);
+  }
+};
+
+const findInfoP = () => {
+  let p = getParticles();
+  let minDist = 10000;
+  for (let theP in p) {
+    if (p[theP].active) {
+      let distance = calcDist(p[theP].x, p[theP].y, mouseX, mouseY);
+      if (distance <= minDist) {
+        minDist = distance;
+        infoP = theP;
+      }
+    }
+  }
+  if (minDist > 30) {
+    infoP = -1;
+  }
+};
+
 document.addEventListener("mousemove", (event) => {
   mouseX = event.pageX / scaleUp;
   mouseY = event.pageY / scaleUp;
@@ -179,19 +222,7 @@ document.addEventListener("mousemove", (event) => {
 document.addEventListener("click", (event) => {
   unpause();
   if (clickCreates == "nothing") {
-    let p = getParticles();
-    let minDist = 10000;
-    let minDistID = 0;
-    for (let theP in p) {
-      if (p[theP].active) {
-        let distance = calcDist(p[theP].x, p[theP].y, mouseX, mouseY);
-        if (distance <= minDist) {
-          minDist = distance;
-          minDistID = theP;
-        }
-      }
-    }
-    console.log(`charge: ${p[minDistID].charge}, mass: ${p[minDistID].mass}`);
+    findInfoP();
     return;
   }
   if (clickCreates == "wire") {
@@ -220,9 +251,11 @@ document.addEventListener("keydown", (event) => {
     clickCreates = "electron";
   } else if (event.key == "p") {
     clickCreates = "proton";
-  } else if (event.key == "w") {
-    clickCreates = "wire";
-  } else if (event.key == "z") {
+  }
+  // else if (event.key == "w") {
+  //   clickCreates = "wire";
+  // }
+  else if (event.key == "z") {
     clickCreates = "nothing";
   } else if (event.code.includes("Digit")) {
     clickSizeAdding(event);

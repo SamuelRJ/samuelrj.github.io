@@ -3,6 +3,7 @@
 import { getLvl } from "./index.js";
 import { getField } from "./fFuncs.js";
 import { calcDist, get, calculateGradientForParticle } from "./miscFuncs.js";
+import { getInfoP, setInfoP } from "./uiAndControl.js";
 
 let p = []; //Particle
 const width = get("width");
@@ -203,7 +204,11 @@ const combineParticles = (thisP, thatP) => {
   p[thatP].active = false;
   p[thisP].elem.style.display = "none";
   p[thatP].elem.style.display = "none";
-  createParticle(x, y, velX, velY, charge, mass); //make drawing better. Electron is now orbiting electron
+  let newP = createParticle(x, y, velX, velY, charge, mass); //make drawing better. Electron is now orbiting electron
+  let infoP = getInfoP();
+  if (thisP == infoP || thatP == infoP) {
+    setInfoP(p.indexOf(newP));
+  }
 };
 
 const updateVelocity = (thisP, thatP, dist) => {
