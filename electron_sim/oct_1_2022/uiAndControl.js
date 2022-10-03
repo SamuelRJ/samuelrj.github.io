@@ -1,15 +1,9 @@
 // User interface and controls
 
 import { clamp8Bit, get, calcDist } from "./miscFuncs.js";
-import {
-  createParticle,
-  protonMass,
-  getParticles,
-  getGlobalCharge,
-} from "./pFuncs.js";
+import { createParticle, protonMass, getParticles } from "./pFuncs.js";
 import { getLvl, changeLvlTo } from "./index.js";
 import { heyJean, setAtom, getAtom } from "./jean.js";
-import { getNeutrons } from "./LUTs/periodicTableLUT.js";
 
 let scaleUp = get("scale"); //how many pixels per pixel
 let infoP = -1;
@@ -25,10 +19,26 @@ const imageData = ctx.createImageData(screenWidth, screenHeight);
 let pauseTimer = 0;
 let autoPauseTimeout = 2000;
 let textFadeTimer = 0;
+let sizePtoCreate = 1;
 let mouseX = 0;
 let mouseY = 0;
 
+let clickCreates = "nothing"; //nothing, electron, proton, wire
 let rapidFire = false;
+
+export const isPaused = () => {
+  pauseTimer++;
+  if (pauseTimer < autoPauseTimeout) {
+    return false;
+  } else if (pauseTimer == autoPauseTimeout) {
+    drawPause();
+  }
+  return true;
+};
+
+export const getNumOfPsToCreate = () => {
+  return sizePtoCreate;
+};
 
 export const updateScreen = (field, p) => {
   checkRapidFire();
@@ -43,17 +53,14 @@ export const updateScreen = (field, p) => {
 };
 
 const updateScreenLvl2 = (field) => {
-  console.log(getGlobalCharge());
-
   for (let i = 0; i < screenWidth - 1; i++) {
     for (let j = 0; j < screenHeight - 1; j++) {
       let pixelStartIndex = (j * screenWidth + i) * 4;
       let x = Math.floor(i / scaleUp);
       let y = Math.floor(j / scaleUp);
-      let qFieldVal = field[x][y].val;
 
-      let rVal = clamp8Bit(-qFieldVal);
-      let gVal = clamp8Bit(qFieldVal);
+      let rVal = clamp8Bit(-field[x][y].val);
+      let gVal = clamp8Bit(field[x][y].val);
       let bVal = clamp8Bit(Math.pow(field[x][y].mass, 2));
 
       rVal += 20 * (field[x][y].dk - 1);
@@ -67,12 +74,45 @@ const updateScreenLvl2 = (field) => {
     }
   }
   ctx.putImageData(imageData, 0, 0);
-  // updateTextOnScreen();
+  updateTextOnScreen();
 };
 
 const checkRapidFire = () => {
   if (rapidFire) {
     clickCreateParticle();
+  }
+};
+
+let neverTyped = true;
+const updateTextOnScreen = () => {
+  let atom = getAtom();
+  if (textFadeTimer++ <= 500) {
+    if (neverTyped) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(
+        0,
+        (500 - textFadeTimer) / 100
+      )}`;
+      ctx.font = "24px serif";
+      ctx.fillText(
+        "Press 'e' or 'p' to \"click-to-create\" electrons or protons",
+        5,
+        25
+      );
+    } else {
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(
+        0,
+        (200 - textFadeTimer) / 100
+      )}`;
+      ctx.font = "20px serif";
+      ctx.fillText(
+        `Click creates: ${atom.atomicNumber}x ${clickCreates}`,
+        5,
+        25
+      );
+    }
+  }
+  if (infoP != -1) {
+    showParticleInfo();
   }
 };
 
@@ -89,16 +129,6 @@ const createScreen = () => {
   ctx.putImageData(imageData, 0, 0);
 };
 
-export const isPaused = () => {
-  pauseTimer++;
-  if (pauseTimer < autoPauseTimeout) {
-    return false;
-  } else if (pauseTimer == autoPauseTimeout) {
-    drawPause();
-  }
-  return true;
-};
-
 const drawPause = () => {
   ctx.beginPath();
   ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
@@ -109,16 +139,43 @@ const drawPause = () => {
   ctx.stroke();
 };
 
-const unpause = () => {
-  drawBlackBackground();
-  pauseTimer = 0;
-};
-
 export const drawBlackBackground = () => {
   ctx.beginPath();
   ctx.fillStyle = "rgba(0, 0, 0, 1)";
   ctx.fillRect(0, 0, screenWidth, screenHeight);
   ctx.stroke();
+};
+
+const unpause = () => {
+  drawBlackBackground();
+  pauseTimer = 0;
+};
+
+const clickCreateParticle = () => {
+  if (clickCreates == "electron") {
+    for (let i = 0; i < sizePtoCreate; i++) {
+      createParticle(
+        mouseX + Math.random() * 10 - 5,
+        mouseY + Math.random() * 10 - 5,
+        0,
+        0,
+        -1,
+        1
+      );
+    }
+  } else if (clickCreates == "proton") {
+    let atom = getAtom();
+    let charge = atom.atomicNumber;
+    let mass = protonMass() * sizePtoCreate;
+    createParticle(
+      mouseX + Math.random() * 10 - 5,
+      mouseY + Math.random() * 10 - 5,
+      0,
+      0,
+      charge,
+      mass
+    );
+  }
 };
 
 export const getInfoP = () => {
@@ -168,8 +225,11 @@ document.addEventListener("mousemove", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-  if (clickCreates.sel == "info") {
+  if (clickCreates == "nothing") {
     findInfoP();
+    return;
+  }
+  if (clickCreates == "wire") {
     return;
   }
   if (pauseTimer < autoPauseTimeout) {
@@ -180,24 +240,8 @@ document.addEventListener("click", (event) => {
   unpause();
 });
 
-const clickCreateParticle = () => {
-  let newP = createParticle(
-    mouseX + Math.random() * 10 - 5,
-    mouseY + Math.random() * 10 - 5,
-    0,
-    0,
-    clickCreates.numP,
-    clickCreates.numN,
-    clickCreates.numE
-  );
-};
-
 document.addEventListener("keydown", (event) => {
-  if (!getKeyStatus(event)) {
-    updateKeyStatus(event, true);
-    selPHandling(event);
-  }
-  // neverTyped = false;
+  neverTyped = false;
   textFadeTimer = 0;
 
   if (event.code == "Space") {
@@ -208,21 +252,23 @@ document.addEventListener("keydown", (event) => {
       drawPause();
       pauseTimer = autoPauseTimeout;
     }
+  } else if (event.key == "e") {
+    clickCreates = "electron";
+  } else if (event.key == "p") {
+    clickCreates = "proton";
   }
   // else if (event.key == "w") {
-  //   clickCreates.sel = "wire";
+  //   clickCreates = "wire";
   // }
-  else if (event.key == "i") {
-    clickCreates.sel = "info";
-  } else if (event.key == "Escape") {
-    clickCreates.numP = 0;
-    clickCreates.numN = 0;
-    clickCreates.numE = 0;
+  else if (event.key == "z") {
+    clickCreates = "nothing";
+  } else if (event.code.includes("Digit")) {
+    clickSizeAdding(event);
   } else if (
-    event.key == "w" ||
-    event.key == "a" ||
-    event.key == "s" ||
-    event.key == "d"
+    event.key == "i" ||
+    event.key == "j" ||
+    event.key == "k" ||
+    event.key == "l"
   ) {
     heyJean("move", event.key, true);
   } else if (event.key == ",") {
@@ -237,14 +283,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keyup", (event) => {
-  if (getKeyStatus(event)) {
-    updateKeyStatus(event, false);
-  }
   if (
-    event.key == "w" ||
-    event.key == "a" ||
-    event.key == "s" ||
-    event.key == "d"
+    event.key == "i" ||
+    event.key == "j" ||
+    event.key == "k" ||
+    event.key == "l"
   ) {
     heyJean("move", event.key, false);
   } else if (event.key == "r") {
@@ -252,93 +295,81 @@ document.addEventListener("keyup", (event) => {
   }
 });
 
-let keyStatus = {
-  num: [false, false, false, false, false, false, false, false, false, false],
-  p: false,
-  n: false,
-  e: false,
-};
+const clickSizeAdding = (event) => {
+  let numTyped = parseInt(event.code.substring(5, 6));
+  setAtom(numTyped);
 
-const updateKeyStatus = (event, status) => {
-  if (event.code.includes("Digit")) {
-    keyStatus.num[parseInt(event.code.substring(5, 6))] = status;
-  } else {
-    keyStatus[event.key] = status;
-  }
-};
-const getKeyStatus = (event) => {
-  if (event.code.includes("Digit")) {
-    return keyStatus.num[parseInt(event.code.substring(5, 6))];
-  } else {
-    return keyStatus[event.key];
-  }
-};
-
-let clickCreates = {
-  sel: "info",
-  info: 0, //particleID,
-  numP: 0,
-  numN: 0,
-  numE: 0,
-};
-
-export const getClickCreates = () => {
-  return clickCreates;
-};
-
-let sizePtoCreate = 0;
-const selPHandling = (event) => {
-  if (event.code.includes("Digit")) {
-    if (!stillTyping()) {
-      sizePtoCreate = parseInt(event.code.substring(5, 6));
-    } else {
-      sizePtoCreate *= 10;
-      sizePtoCreate += parseInt(event.code.substring(5, 6));
-    }
-  } else {
-    if (event.key == "p") {
-      clickCreates.sel = "proton";
-      if (sizePtoCreate >= 0) {
-        clickCreates.numP = sizePtoCreate;
-        sizePtoCreate = -1;
-        clickCreates.numN = getNeutrons(clickCreates.numP);
-      }
-      stillTyping(false);
-    } else if (event.key == "n") {
-      clickCreates.sel = "neutron";
-      if (sizePtoCreate >= 0) {
-        clickCreates.numN = sizePtoCreate;
-        sizePtoCreate = -1;
-      }
-      stillTyping(false);
-    } else if (event.key == "e") {
-      clickCreates.sel = "electron";
-      if (sizePtoCreate >= 0) {
-        clickCreates.numE = sizePtoCreate;
-        sizePtoCreate = -1;
-        stillTyping(false);
-      }
-    }
-  }
-};
-
-let typingNumTimer = 0;
-const stillTyping = (still) => {
-  const typingDelay = 1000;
-  if (still != null && still == false) {
-    typingNumTimer -= typingDelay;
-    return false;
-  }
-  if (Date.now() - typingNumTimer < typingDelay) {
-    typingNumTimer = Date.now();
-    return true;
-  }
-  typingNumTimer = Date.now();
-  return false;
-};
-
-export const getNumOfPsToCreate = () => {
-  return sizePtoCreate;
+  // let addVal = parseInt(event.code.substring(5, 6));
+  // if (addVal == 0) {
+  //   sizePtoCreate = 1;
+  // } else {
+  //   //addVal = Math.pow(10, addVal - 1);
+  //   if (!event.shiftKey) {
+  //     sizePtoCreate = addVal;
+  //     if (addVal == 6) {
+  //       sizePtoCreate = 10;
+  //     } else if (addVal == 7) {
+  //       sizePtoCreate = 20;
+  //     } else if (addVal == 8) {
+  //       sizePtoCreate = 50;
+  //     } else if (addVal == 9) {
+  //       sizePtoCreate = 100;
+  //     }
+  //   } else {
+  //   }
+  // }
 };
 
 createScreen();
+
+/* OLD FUNCS
+
+const updateScreenLvl3 = (p) => {
+  drawBlackBackground();
+  for (let theP in p) {
+    if (p[theP].active) {
+      if (imageDataLvl3[p[theP].id] == null) {
+        imageDataLvl3[p[theP].id] = createImageLvl3(p[theP]);
+      }
+      // ctx.putImageData(imageDataLvl3[p[theP].id], p[theP].x, p[theP].y);
+      ctx.drawImage(imageDataLvl3[p[theP].id], p[theP].x, p[theP].y);
+    }
+  }
+};
+
+function imageDataToImage(imagedata) {
+  const tempCtx = document.getElementById("tempCanvas").getContext("2d");
+  tempCanvas.width = imagedata.width;
+  tempCanvas.height = imagedata.height;
+  tempCtx.putImageData(imagedata, 0, 0);
+
+  var image = new Image();
+  image.src = tempCanvas.toDataURL();
+  return image;
+}
+
+const createImageLvl3 = (p) => {
+  let w = 20;
+  let h = 20;
+  let newImageData = ctx.createImageData(w * 2, h * 2);
+  let q = p.charge;
+  let m = p.mass;
+  for (let i = 0; i < w * 2; i++) {
+    for (let j = 0; j < h * 2; j++) {
+      let pixelStartIndex = (j * w * 2 + i) * 4;
+      let dist = calcDist(i, j, w, h);
+      const rVal = clamp8Bit((-q * 100) / dist);
+      const gVal = clamp8Bit((q * 100) / dist);
+      const bVal = clamp8Bit((50 * m ** 0.2) / dist);
+      const aVal = clamp8Bit(255 / dist);
+      newImageData.data[pixelStartIndex] = rVal; // red value
+      newImageData.data[pixelStartIndex + 1] = gVal; // green value
+      newImageData.data[pixelStartIndex + 2] = bVal; // blue value
+      newImageData.data[pixelStartIndex + 3] = aVal; // alpha value
+    }
+  }
+  return imageDataToImage(newImageData);
+  // return newImageData;
+};
+
+*/

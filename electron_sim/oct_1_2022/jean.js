@@ -1,11 +1,11 @@
 // Jean
 
-import { getPInfo } from "./LUTs/periodicTableLUT.js";
-import { getDamping, getParticles, updateDamping } from "./pFuncs.js";
-import { getClickCreates, getInfoP } from "./uiAndControl.js";
+import { getDamping, updateDamping } from "./pFuncs.js";
+import { getNumOfPsToCreate } from "./uiAndControl.js";
+import { getAtomInfo } from "./LUTs/periodicTableLUT.js";
 
 const Jean = document.getElementById("jean").getContext("2d");
-let atom = getPInfo();
+let atom = getAtomInfo();
 
 let jean = {
   x: 100,
@@ -30,20 +30,20 @@ export const heyJean = (jeanAction, jeanInfo, jeanDir) => {
     drawJeansCarpet(jean);
     updateJeanMetrics(jean);
     drawJean(jean);
+    // console.log(jean.x);
   }
 };
 
 const updateJeanControls = (jeanInfo, jeanDir) => {
-  if (jeanInfo == "w") {
+  if (jeanInfo == "i") {
     jean.i = jeanDir;
-  } else if (jeanInfo == "a") {
+  } else if (jeanInfo == "j") {
     jean.j = jeanDir;
-  } else if (jeanInfo == "s") {
+  } else if (jeanInfo == "k") {
     jean.k = jeanDir;
-  } else if (jeanInfo == "d") {
+  } else if (jeanInfo == "l") {
     jean.l = jeanDir;
   }
-  console.log(jeanDir);
 };
 
 const updateJeanMovement = (jean) => {
@@ -119,98 +119,32 @@ export const updateJeanMetrics = (jean) => {
   let filledOffsetTotal = filledOffsetFromTop + filledOffsetTop;
   Jean.fillRect(20, filledOffsetTotal, 52, filledHeight);
   Jean.stroke();
-  Jean.fillStyle = `rgba(0, 255, 255, 1)`;
+  Jean.fillStyle = `rgba(0, 255, 255, 11)`;
   Jean.font = "24px serif";
   Jean.fillText(`${getDamping()}`, 25, 42);
   updateJeanAtomDisplay();
 };
 
-// let clickCreates = {
-//   sel: "info",
-//   info: 0, //particleID,
-//   p: 0,
-//   n: 0,
-//   e: 0,
-// };
-
 const updateJeanAtomDisplay = () => {
-  let clickCreates = getClickCreates();
-  if (clickCreates.sel == "info") {
-    let infoP = getInfoP();
-    if (infoP == -1) {
-      return;
-    }
-    let p = getParticles();
-    clickCreates.numP = p[infoP].numP;
-    clickCreates.numN = p[infoP].numN;
-    clickCreates.numE = p[infoP].numE;
-  }
+  let atom = getAtom();
 
-  // console.log(clickCreates);
-
-  let pViewer = {
-    x: 20,
-    y: 600,
-    w: 150,
-    h: 150,
-  };
-
-  // Number of Protons
-  Jean.fillStyle = `rgba(50, 255, 50, .1)`;
-  Jean.fillRect(pViewer.x, pViewer.y, pViewer.w, pViewer.h);
+  Jean.fillStyle = `rgba(${100}, ${100}, ${100}, 1)`;
+  Jean.fillRect(20, 600, 150, 150);
   Jean.stroke();
-  Jean.fillStyle = `rgba(50, 255, 50, 1)`;
-  Jean.font = "40px serif";
-  Jean.textAlign = "left";
-  Jean.fillText(`${clickCreates.numP}`, pViewer.x + 8, pViewer.y + 37);
-
-  // Number of Neutrons
-  Jean.fillStyle = `rgba(50, 50, 255, .1)`;
-  Jean.fillRect(pViewer.x, pViewer.y, pViewer.w, pViewer.h);
-  Jean.stroke();
-  Jean.fillStyle = `rgba(180, 180, 180, 1)`;
-  Jean.font = "40px serif";
-  Jean.textAlign = "center";
-  Jean.fillText(
-    `${clickCreates.numN}`,
-    pViewer.x + pViewer.w / 2,
-    pViewer.y + 37
-  );
-
-  // Number of Electrons
-  Jean.fillStyle = `rgba(255, 50, 50, .1)`;
-  Jean.fillRect(pViewer.x, pViewer.y, pViewer.w, pViewer.h);
-  Jean.stroke();
-  Jean.fillStyle = `rgba(255, 50, 50, 1)`;
-  Jean.font = "40px serif";
-  Jean.textAlign = "right";
-  Jean.fillText(
-    `${clickCreates.numE}`,
-    pViewer.x + pViewer.w - 8,
-    pViewer.y + 37
-  );
-  setAtom(clickCreates);
-
-  let atomicSymbol = "";
-  if (atom.symbol != null) {
-    atomicSymbol = atom.symbol;
-  }
-
-  // Symbol
   Jean.fillStyle = `rgba(200, 200, 200, 1)`;
+  Jean.font = "40px serif";
+  Jean.fillText(`${atom.atomicNumber}`, 27, 637);
+
   Jean.font = "100px serif";
   Jean.textAlign = "center";
-  Jean.fillText(`${atomicSymbol}`, pViewer.x + pViewer.w / 2, pViewer.y + 125);
+  Jean.fillText(`${atom.symbol}`, 95, 720);
   Jean.textAlign = "left";
 };
 
-export const setAtom = (newAtom) => {
-  atom = getPInfo(newAtom);
-  if (atom == null) {
-    atom = getPInfo();
-  }
+export const setAtom = (numProtons, numNeutrons) => {
+  atom = getAtomInfo(numProtons, numNeutrons);
 };
-export const getAtom = () => {
+export const getAtom = (numProtons, numNeutrons) => {
   return atom;
 };
 

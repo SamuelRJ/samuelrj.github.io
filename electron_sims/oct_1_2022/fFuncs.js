@@ -2,7 +2,7 @@
 
 import { get } from "./miscFuncs.js";
 import { calcDist } from "./miscFuncs.js";
-import { getParticles, getGlobalCharge } from "./pFuncs.js";
+import { getParticles } from "./pFuncs.js";
 import { getLvl } from "./index.js";
 
 let scaleUp = get("scale"); //how many pixels per pixel
@@ -61,7 +61,6 @@ const updateFieldsLvl2 = (p) => {
       field[x][y].mass = 0;
     }
   }
-  let globalCharge = getGlobalCharge();
   let range = Math.max(width, height);
   let numParticles = getParticles().length;
   let rangeFactor = Math.round(Math.max(3, 1 - numParticles ** 0.5));

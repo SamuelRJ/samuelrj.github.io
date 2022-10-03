@@ -4,9 +4,8 @@ import { getLvl } from "./index.js";
 import { getField } from "./fFuncs.js";
 import { calcDist, get, calculateGradientForParticle } from "./miscFuncs.js";
 import { getInfoP, setInfoP } from "./uiAndControl.js";
-import { getPCharge, getPMass } from "./LUTs/periodicTableLUT.js";
 
-let p = []; //Particles
+let p = []; //Particle
 const width = get("width");
 const height = get("height");
 const screenWidth = get("screenWidth");
@@ -16,12 +15,11 @@ const particleContainerElem = document.getElementById("particleContainer");
 let damping = 0.97;
 let globalCharge = 0;
 
-export const createParticle = (x, y, velX, velY, numP, numN, numE) => {
-  if (numP == 0 && numN == 0) {
-    createElectrons(x, y, velX, velY, numE);
-    return;
-  }
+export const createParticle = (x, y, velX, velY, charge, mass) => {
   const elem = document.createElement("div");
+  elem.className = `particle particle_${charge}_${mass}`;
+  elem.style.background = calculateGradientForParticle(charge, mass);
+  particleContainerElem.appendChild(elem);
 
   let newP = {
     id: getNewID(),
@@ -29,20 +27,11 @@ export const createParticle = (x, y, velX, velY, numP, numN, numE) => {
     y,
     velX,
     velY,
-    numP,
-    numN,
-    numE,
-    charge: 0,
-    mass: 0,
+    charge,
+    mass,
     active: true,
     elem,
   };
-  newP.charge = getPCharge(newP);
-  newP.mass = getPMass(newP);
-
-  elem.className = `particle particle_${newP.charge}_${newP.mass}`;
-  elem.style.background = calculateGradientForParticle(newP.charge, newP.mass);
-  particleContainerElem.appendChild(elem);
   if (getLvl() != 3) {
     newP.elem.style.display = "none";
   }
@@ -50,40 +39,10 @@ export const createParticle = (x, y, velX, velY, numP, numN, numE) => {
   return newP;
 };
 
-const createElectrons = (x, y, velX, velY, numE) => {
-  for (let i = 0; i < numE; i++) {
-    const elem = document.createElement("div");
-    let newP = {
-      id: getNewID(),
-      x: x + Math.random() * 10 - 5,
-      y: y + Math.random() * 10 - 5,
-      velX: Math.random() - 0.5,
-      velY: Math.random() - 0.5,
-      numP: 0,
-      numN: 0,
-      numE: 1,
-      charge: -1,
-      mass: 1,
-      active: true,
-      elem,
-    };
-    elem.className = `particle particle_${newP.charge}_${newP.mass}`;
-    elem.style.background = calculateGradientForParticle(
-      newP.charge,
-      newP.mass
-    );
-    particleContainerElem.appendChild(elem);
-    if (getLvl() != 3) {
-      newP.elem.style.display = "none";
-    }
-    p.push(newP);
-  }
-};
-
 const getNewID = () => {
   return String(Math.round(Math.random() * 1000000));
 };
-export const getGlobalCharge = () => {
+const getGlobalCharge = () => {
   return globalCharge;
 };
 
@@ -96,10 +55,12 @@ export const pushNewP = (p) => {
 };
 
 export const updateParticles = () => {
+  let newGlobalCharge = 0;
   for (let thisP in p) {
     if (!p[thisP].active) {
       continue;
     }
+    newGlobalCharge += p[thisP].charge;
     for (let thatP in p) {
       if (!p[thatP].active || !p[thisP].active) {
         continue;
@@ -124,15 +85,12 @@ export const updateParticles = () => {
       }
     }
   }
-
-  let newGlobalCharge = 0;
   for (let thisP in p) {
     if (!p[thisP].active) {
       continue;
     }
-    newGlobalCharge += p[thisP].charge;
     addDamping(thisP);
-    let impedance = 1; // addImpedance(thisP);
+    let impedance = addImpedance(thisP);
     p[thisP].x += p[thisP].velX / impedance;
     p[thisP].y += p[thisP].velY / impedance;
     wallCheck(thisP);
@@ -161,6 +119,9 @@ const addImpedance = (theP) => {
   //   Math.min(width - 1, Math.floor(p[theP].y - p[theP].velY))
   // );
   let field = getField();
+  if (!field[x][y].dk) {
+    console.log(field[x][y].dk);
+  }
   return field[x][y].dk;
   // if (field[xPrev][yPrev].dk != field[x][y].dk) {
   //   let relativeDk = field[xPrev][yPrev].dk / field[x][y].dk;
@@ -176,6 +137,11 @@ const popInactivePs = () => {
       p.splice(interrogatedP, 1);
     }
   }
+};
+
+export const protonMass = () => {
+  // return 1836; //Real ratio, but 10 is more fun.
+  return 100;
 };
 
 export const getDamping = () => {
@@ -232,14 +198,13 @@ const combineParticles = (thisP, thatP) => {
   let velY =
     (p[thisP].velY * p[thisP].mass + p[thatP].velY * p[thatP].mass) /
     (p[thisP].mass + p[thatP].mass);
-  let numP = p[thisP].numP + p[thatP].numP;
-  let numN = p[thisP].numN + p[thatP].numN;
-  let numE = p[thisP].numE + p[thatP].numE;
+  let charge = p[thisP].charge + p[thatP].charge;
+  let mass = p[thisP].mass + p[thatP].mass;
   p[thisP].active = false;
   p[thatP].active = false;
   p[thisP].elem.style.display = "none";
   p[thatP].elem.style.display = "none";
-  let newP = createParticle(x, y, velX, velY, numP, numN, numE); //make drawing better. Electron is now orbiting electron
+  let newP = createParticle(x, y, velX, velY, charge, mass); //make drawing better. Electron is now orbiting electron
   let infoP = getInfoP();
   if (thisP == infoP || thatP == infoP) {
     setInfoP(p.indexOf(newP));
@@ -272,7 +237,7 @@ export const logParticles = () => {
 
 const wallCheck = (theP) => {
   let bounceDamping = 0.8;
-  let impedance = 1; // addImpedance(theP);
+  let impedance = addImpedance(theP);
   if (p[theP].x > width - 1) {
     p[theP].velX *= -bounceDamping;
     p[theP].x += p[theP].velX / impedance;
@@ -291,13 +256,4 @@ const wallCheck = (theP) => {
     p[theP].y += p[theP].velY / impedance;
     p[theP].y = Math.max(0, p[theP].y);
   }
-};
-
-export const protonMass = () => {
-  // return 1836; //Real ratio, but 50 is more fun.
-  return 50;
-};
-export const neutronMass = () => {
-  // return 1836; //Real ratio, but 50 is more fun.
-  return 50;
 };
